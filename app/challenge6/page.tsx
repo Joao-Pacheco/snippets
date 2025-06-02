@@ -18,9 +18,9 @@ Optional: Show a total inventory value at the bottom (sum of all in-stock produc
  */
 
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
-interface product {
+interface Product {
   category: string;
   description: string;
   image: string;
@@ -32,9 +32,10 @@ interface product {
 }
 
 const Challenge5 = () => {
-  const [products, setProducts] = useState<product[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState<string>("");
   const [isAscending, setIsAscending] = useState<boolean>(false);
+  const [totalInStock, settotalInStock] = useState<number>(0);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -47,11 +48,11 @@ const Challenge5 = () => {
     fetchProducts();
   }, []);
 
-  const sortByPrince = () => {
+  const sortByPrice = () => {
     setIsAscending(!isAscending);
     const newArray = [...products];
     setProducts(
-      newArray.sort((a: product, b: product) =>
+      newArray.sort((a: Product, b: Product) =>
         isAscending ? a.price - b.price : b.price - a.price
       )
     );
@@ -59,7 +60,7 @@ const Challenge5 = () => {
 
   const removeProductFromList = (id: number) => {
     const newArray = [...products];
-    setProducts(newArray.filter((product: product) => product.id != id));
+    setProducts(newArray.filter((product: Product) => product.id != id));
   };
 
   const inStock = (id: number) => {
@@ -67,29 +68,29 @@ const Challenge5 = () => {
     if (product !== undefined) {
       const index: number = products.indexOf(product);
       const newArray = [...products];
-      newArray[index].inStock =
-        newArray[index].inStock === null ? true : !newArray[index].inStock;
+      newArray[index].inStock = newArray[index].inStock =
+        !newArray[index].inStock;
       setProducts(newArray);
     }
   };
 
-  const totalInStock = () =>
-    useMemo(() => {
-      var total = 0;
-      products.forEach((product) => {
-        if (product.inStock) {
-          total += product.price;
-        }
-      });
-      return total;
-    }, [products]);
+  useEffect(() => {
+    var total = 0;
+    products.forEach((product) => {
+      if (product.inStock) {
+        total += product.price;
+      }
+    });
+    settotalInStock(total);
+  }, [products]);
 
   return (
     <div>
       <br />
       <br />
       <div className="flex cursor">
-        <input value="Sort by price" type="button" onClick={sortByPrince} />
+        <button onClick={sortByPrice} /> Sort by price
+        <button />
       </div>
       <br />
       <br />
@@ -107,8 +108,8 @@ const Challenge5 = () => {
               product.title.toLowerCase().includes(search.toLowerCase()) ||
               product.category.toLowerCase().includes(search.toLowerCase())
           )
-          .map((item, index) => (
-            <li key={index + item.title}>
+          .map((item) => (
+            <li key={item.id}>
               Title: {item.title}
               <br />
               <br />
@@ -119,18 +120,16 @@ const Challenge5 = () => {
               <br />
               <br />
               <br />
-              <input
-                value="remove"
-                type="button"
-                onClick={() => removeProductFromList(item.id)}
-              />
+              <button onClick={() => removeProductFromList(item.id)}>
+                remove
+              </button>
               <br />
-              <input
+              <button
                 style={{ background: item.inStock ? "green" : "red" }}
-                value="In Stock"
-                type="button"
                 onClick={() => inStock(item.id)}
-              />
+              >
+                In Stock
+              </button>
               <br />
               <br />
               <br />
@@ -140,7 +139,7 @@ const Challenge5 = () => {
       <div>
         Total in Stock:
         <br />
-        {totalInStock()}
+        {totalInStock}
       </div>
     </div>
   );
