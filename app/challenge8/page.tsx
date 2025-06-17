@@ -1,39 +1,68 @@
 "use client";
-import React, { useState, useEffect, useRef, use } from "react";
-import "./style.css";
+import React, { useState, useEffect, useRef } from "react";
 
-export default function Challenge8() {
+export default function ProgressBar() {
   const [progress, setProgress] = useState<number>(0);
-  const timeOut = useRef<NodeJS.Timeout>(undefined);
-  const [clicked, setClicked] = useState<boolean>(false);
-  const time = 500;
+  const [isRunning, setIsRunning] = useState<boolean>(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const addToBar = (value: number) => {
-    console.log(value);
-    if (value >= 90) {
-      clearInterval(timeOut.current);
-    }
-    return value + 10;
+  const startProgress = () => {
+    if (isRunning) return;
+    setProgress(0);
+    setIsRunning(true);
   };
 
-  const startBar = () => {
-    if (clicked) return;
-    setClicked(true);
-    timeOut.current = setInterval(() => {
-      setProgress((prev) => addToBar(prev));
-    }, time);
-  };
+  useEffect(() => {
+    if (!isRunning) return;
+
+    const totalDuration = 3000; // 3 segundos
+    const stepTime = 100; // atualiza a cada 100ms
+    const increment = 100 / (totalDuration / stepTime); // quanto aumenta por passo
+
+    intervalRef.current = setInterval(() => {
+      setProgress((prev) => {
+        if (prev + increment >= 100) {
+          clearInterval(intervalRef.current as NodeJS.Timeout);
+          setIsRunning(false);
+          return 100;
+        }
+        return prev + increment;
+      });
+    }, stepTime);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [isRunning]);
 
   return (
-    <div className="container">
-      <div className="progressbar-container">
+    <div style={{ width: 300, margin: "50px auto", fontFamily: "sans-serif" }}>
+      <h3>🚀 Uber Progress Bar</h3>
+
+      <div
+        style={{
+          height: 24,
+          width: "100%",
+          backgroundColor: "#eee",
+          borderRadius: 4,
+          overflow: "hidden",
+          marginBottom: 12,
+        }}
+      >
         <div
-          style={{ width: `calc(${progress}% - 10px` }}
-          className="progressbar-container-bar"
-        ></div>
+          style={{
+            height: "100%",
+            width: `${progress}%`,
+            backgroundColor: "#007bff",
+            transition: "width 100ms linear",
+          }}
+        />
       </div>
-      <button className="btn-start" onClick={startBar}>
-        start
+
+      <button onClick={startProgress} disabled={isRunning}>
+        {isRunning ? "Running..." : "Start Progress"}
       </button>
     </div>
   );
