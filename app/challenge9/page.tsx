@@ -22,39 +22,43 @@ export default function Challenge9() {
   const [hasMore, setHasMore] = useState(true);
   const observerTarget = useRef(null);
 
-  const fetchListOfProducts = async () => {
-    if (!hasMore || isLoading) return;
+  const fetchListOfProducts = (): Promise<Product[]> =>
+    new Promise(async (resolve, reject) => {
+      if (!hasMore || isLoading)
+        reject(new Error("Failed to fetch data of products"));
 
-    setIsLoading(true);
-    try {
       const responseFetchProducts = await fetch(
         `https://fakestoreapi.com/products?limit=5&page=${page}`
       );
 
       if (!responseFetchProducts.ok)
-        throw new Error("Failed to fetch data of products");
+        reject(new Error("Failed to fetch data of products"));
 
-      const productsData = await responseFetchProducts.json();
+      const productsData: Product[] = await responseFetchProducts.json();
 
       if (productsData.length === 0) {
         setHasMore(false);
-        return;
+        reject(new Error("Failed to fetch data of products"));
       }
 
-      setListProducts((prev) => [...prev, ...productsData]);
-      setPage((prev) => prev + 1);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      resolve(productsData);
+    });
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore && !isLoading) {
-          fetchListOfProducts();
+          setIsLoading(true);
+
+          fetchListOfProducts()
+            .then((result) => {
+              setListProducts((prev) => [...prev, ...result]);
+              setPage((prev) => prev + 1);
+            })
+            .catch((error) => console.error(error))
+            .finally(() => {
+              setIsLoading(false);
+            });
         }
       },
       { threshold: 0.5 }
